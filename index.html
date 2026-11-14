@@ -142,5 +142,61 @@
     <p class="small">Sharing knowledge, professional experience, and cultural heritage.</p>
   </div>
 </footer>
+
+<section id="bookstore" style="padding:50px 20px;max-width:1100px;margin:auto;">
+  <h2 style="text-align:center;">Iyasu Angani Dereja Bookstore</h2>
+  <p style="text-align:center;">Discover and order books in print or digital format.</p>
+  <div id="book-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;">
+    <p>Loading books...</p>
+  </div>
+  <p id="book-error" style="color:#b00020;text-align:center;"></p>
+</section>
+
+<script>
+const SUPABASE_URL = "https://ioiymxlodnhwjepttqll.supabase.co";
+const SUPABASE_KEY = "sb_publishable_aqMXzdFLtCf4r9mYUBO8ng_iWvrPXhc";
+
+async function loadBooks() {
+  const list = document.getElementById("book-list");
+  const error = document.getElementById("book-error");
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/books?select=id,title,printed_price_etb,printed_price_usd,pdf_price_etb,pdf_price_usd,pdf_available&order=created_at.desc`,
+      { headers: { apikey: SUPABASE_KEY } }
+    );
+
+    if (!response.ok) throw new Error("Could not load books.");
+
+    const books = await response.json();
+    list.innerHTML = "";
+
+    if (!books.length) {
+      list.textContent = "Our books will be available here soon.";
+      return;
+    }
+
+    books.forEach(book => {
+      const card = document.createElement("div");
+      card.style.cssText = "border:1px solid #ddd;border-radius:12px;padding:22px;text-align:center;";
+      const title = document.createElement("h3");
+      title.textContent = book.title;
+      const printed = document.createElement("p");
+      printed.textContent = `Printed: ETB ${book.printed_price_etb ?? "—"} | USD ${book.printed_price_usd ?? "—"}`;
+      const pdf = document.createElement("p");
+      pdf.textContent = book.pdf_available
+        ? `PDF: ETB ${book.pdf_price_etb ?? "—"} | USD ${book.pdf_price_usd ?? "—"}`
+        : "PDF edition: Coming soon";
+      card.append(title, printed, pdf);
+      list.appendChild(card);
+    });
+  } catch (err) {
+    error.textContent = "Books could not be loaded. Please try again later.";
+    list.innerHTML = "";
+  }
+}
+
+loadBooks();
+</script>
 </body>
 </html>
