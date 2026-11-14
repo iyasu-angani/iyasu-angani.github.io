@@ -150,6 +150,58 @@
     <p>Loading books...</p>
   </div>
   <p id="book-error" style="color:#b00020;text-align:center;"></p>
+
+<div id="book-order" style="margin:35px auto;max-width:650px;padding:25px;border:1px solid #ddd;border-radius:12px;">
+  <h3>Place Your Book Order</h3>
+  <p>Order your printed copy of ሽመንዳ.</p>
+
+  <form id="book-order-form">
+    <input type="hidden" name="book_id" value="21184116-06a6-473b-9a50-5a10388e107a">
+    <input type="hidden" name="format" value="printed">
+
+    <label>Full name *</label>
+    <input name="customer_name" required minlength="2" style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Phone number *</label>
+    <input name="phone" type="tel" required minlength="5" style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Email address</label>
+    <input name="email" type="email" style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Payment currency *</label>
+    <select name="currency" required style="width:100%;padding:10px;margin:6px 0 15px;">
+      <option value="ETB">Ethiopian Birr (ETB)</option>
+      <option value="USD">US Dollar (USD)</option>
+    </select>
+
+    <h4>Delivery Address</h4>
+
+    <label>Country *</label>
+    <input name="delivery_country" required style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Region / State</label>
+    <input name="delivery_region" style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>City *</label>
+    <input name="delivery_city" required style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Postal code</label>
+    <input name="postal_code" style="width:100%;padding:10px;margin:6px 0 15px;">
+
+    <label>Street address *</label>
+    <textarea name="street_address" required style="width:100%;padding:10px;margin:6px 0 15px;"></textarea>
+
+    <label>Delivery instructions</label>
+    <textarea name="delivery_instructions" style="width:100%;padding:10px;margin:6px 0 15px;"></textarea>
+
+    <button type="submit" style="padding:12px 25px;background:#234f70;color:white;border:0;border-radius:6px;cursor:pointer;">
+      Submit Order
+    </button>
+
+    <p id="order-message" role="status"></p>
+  </form>
+</div>
+
 </section>
 
 <script>
@@ -197,6 +249,48 @@ async function loadBooks() {
 }
 
 loadBooks();
+document.getElementById("book-order-form").addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const message = document.getElementById("order-message");
+  const button = form.querySelector('button[type="submit"]');
+
+  button.disabled = true;
+  message.textContent = "Submitting your order...";
+
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/submit-order`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY
+        },
+        body: JSON.stringify(data)
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Order submission failed.");
+    }
+
+    message.textContent =
+      `Order received! Your order number is ${result.order.order_number}. Please keep it for payment.`;
+
+    form.reset();
+
+  } catch (error) {
+    message.textContent = error.message || "Unable to submit your order. Please try again.";
+  } finally {
+    button.disabled = false;
+  }
+});
 </script>
 </body>
 </html>
